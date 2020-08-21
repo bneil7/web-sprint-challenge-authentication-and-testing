@@ -43,20 +43,44 @@ describe("server", () => {
 
   describe("POST /login", () => {
     it("should return 200 OK when user logs in with proper credentials", async () => {
-      await request(server).post("api/auth/register").send({
-        username: "user",
-        password: "pass",
-      });
-      await request(server)
-        .post("/api/auth/login")
-        .send({
-          username: "user",
-          password: "pass",
-        })
+      return supertest(server)
+        .get("/")
         .then(res => {
           expect(res.status).toBe(200);
-          done();
         });
+    });
+
+    it("should return token when user logs in with proper credentials", async () => {
+      await supertest(server).post("/api/auth/register").send({
+        username: "Louie",
+        password: "NewisAndTheHues",
+      });
+      const res = await supertest(server).post("/api/auth/login").send({
+        username: "Louie",
+        password: "NewisAndTheHues",
+      });
+      expect(res.body.token).not.toBeNull();
+    });
+  });
+});
+
+describe("jokes router", () => {
+  beforeEach(async () => {
+    // empty table and reset primary key back to 1
+    await db("users").truncate();
+  });
+
+  describe("GET /jokes endpoint", () => {
+    it("should fetch jokes from db", async () => {
+      await request(server)
+        .get("/api/jokes")
+        .then(res => {
+          expect(res.body).toBeDefined();
+        });
+    });
+    it("should return 401 if there is no token", async () => {
+      const res = await request(server).get("/api/jokes");
+      expect(res.status).toBe(401);
     });
   });
 });
